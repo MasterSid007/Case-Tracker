@@ -4,9 +4,6 @@ A self-hosted, automated USCIS case status tracker with a sleek dark-mode dashbo
 
 Track multiple USCIS receipt numbers, get notified instantly when a status changes, and monitor your immigration case progress — all from a beautiful web dashboard accessible from any device.
 
-<p align="center">
-  <img src="docs/screenshot-dashboard.png" alt="Dashboard Screenshot" width="800"/>
-</p>
 
 ## ✨ Features
 
