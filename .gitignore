@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Data (user-specific, contains personal case info)
+data/
+
+# Environment variables (contains secrets)
+.env
+
+# Tunnel binaries
+ngrok.exe
+ngrok
+cloudflared.exe
+cloudflared
+
+# Tunnel logs/configs
+pinggy_*.txt
+config.yml
+start.bat
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI
+.claude/
+
+# Sensitive Screenshots
+docs/screenshot-dashboard.png

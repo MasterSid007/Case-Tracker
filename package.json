@@ -1,0 +1,31 @@
+{
+  "name": "uscis-tracker",
+  "version": "1.0.0",
+  "description": "Self-hosted USCIS case status tracker with automated checking, desktop & push notifications, and a sleek dark-mode dashboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "setup": "node scripts/setup.js",
+    "install-browser": "npx playwright install chromium"
+  },
+  "keywords": [
+    "uscis",
+    "immigration",
+    "case-status",
+    "tracker",
+    "notifications",
+    "pwa"
+  ],
+  "author": "Siddharth Mishra",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "node-cron": "^3.0.3",
+    "node-notifier": "^10.0.1",
+    "playwright": "^1.49.0",
+    "uuid": "^11.0.3",
+    "web-push": "^3.6.7"
+  }
+}

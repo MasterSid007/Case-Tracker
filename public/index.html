@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>USCIS Command Center</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#030712" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/img/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css?v=6"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+</head>
+<body>
+
+<!-- ===== 3D CANVAS ===== -->
+<canvas id="three-canvas" aria-hidden="true"></canvas>
+
+<!-- ===== AMBIENT BACKGROUND ===== -->
+<div class="bg-gradient-layer" aria-hidden="true">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-noise" aria-hidden="true"></div>
+<div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+
+<!-- ===== LOGIN ===== -->
+<div class="overlay" id="overlay-login">
+  <div class="modal-box login-box">
+    <div class="login-brand">
+      <div class="brand-mark">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h1>Command Center</h1>
+    </div>
+    <input type="password" id="input-password" class="input" placeholder="Enter password" autofocus/>
+    <div id="login-error" class="hidden error-text"></div>
+    <button class="btn-primary w-full mt-3" id="btn-login">Sign In</button>
+    <button class="btn-ghost w-full mt-2" id="btn-register">Create Account</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app" id="app-canvas">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-mark brand-mark-sm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <span class="topbar-title">USCIS Command Center</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ghost" id="btn-check-all" title="Refresh all">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span>Refresh</span>
+      </button>
+      <button class="btn-accent" id="btn-add-case">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add Case</span>
+      </button>
+      <div class="topbar-divider"></div>
+      <button class="btn-icon" id="btn-logs" title="Activity" aria-label="Activity log">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </button>
+      <button class="btn-icon" id="btn-settings" title="Settings" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button class="btn-icon" id="btn-logout" title="Sign out" aria-label="Sign out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- HERO HEADLINE -->
+    <div class="hero-headline">
+      <h2>USCIS Tracker</h2>
+      <div class="hero-sub">Immigration Status Command Center</div>
+    </div>
+
+    <!-- HERO METRICS -->
+    <section class="hero">
+      <div class="stat-card stat-total">
+        <div class="stat-number" id="metric-total">0</div>
+        <div class="stat-label">Cases Tracked</div>
+      </div>
+      <div class="stat-card stat-approved">
+        <div class="stat-number" id="metric-appr">0</div>
+        <div class="stat-label">Approved</div>
+        <div class="stat-glow"></div>
+      </div>
+      <div class="stat-card stat-action">
+        <div class="stat-number" id="metric-rfe">0</div>
+        <div class="stat-label">Action Needed</div>
+        <div class="stat-glow"></div>
+      </div>
+      <div class="stat-card stat-sync">
+        <div class="stat-sync-row">
+          <span class="sync-dot" id="sync-dot"></span>
+          <span class="stat-label" id="sync-label">Auto-sync active</span>
+        </div>
+        <div class="sync-times">
+          <span>Last: <strong id="status-last">--</strong></span>
+          <span>Next: <strong id="status-next">--</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" id="dashboard-metrics">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="progress">In Progress</button>
+        <button class="filter-tab" data-filter="approved">Approved</button>
+        <button class="filter-tab" data-filter="action">Action Needed</button>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-icon-sm" id="btn-timeline" title="Timeline view">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+        </button>
+        <button class="btn-icon-sm" id="btn-compare" title="Compare cases">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+        </button>
+        <div class="search-box">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Search..." />
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE LIST -->
+    <div class="case-list" id="cases-grid"></div>
+
+    <!-- EMPTY STATE -->
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-illustration">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" opacity="0.3"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h2>No cases yet</h2>
+      <p>Add a USCIS receipt number to start tracking your case status.</p>
+      <button class="btn-accent mt-4" onclick="document.getElementById('btn-add-case').click()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Your First Case
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- ADD CASE -->
+<div class="overlay hidden" id="overlay-add">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Add Case</h2>
+      <button class="btn-icon close-modal" data-close="overlay-add" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label>Receipt Number</label>
+      <input type="text" id="input-receipt" class="input mono" placeholder="IOE0912345678" style="font-size:16px; letter-spacing:0.5px;"/>
+      <label class="mt-3">Label <span class="label-hint">optional</span></label>
+      <input type="text" id="input-label" class="input" placeholder="e.g. I-485 Application" />
+      <div id="add-error" class="hidden error-text mt-2"></div>
+      <button class="btn-primary w-full mt-4" id="btn-add-submit">Add Case</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay hidden" id="overlay-settings">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="btn-icon close-modal" data-close="overlay-settings" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="setting-row">
+        <div><div class="setting-title">Background Sync</div><div class="setting-desc">Automatically check case statuses</div></div>
+        <label class="toggle"><input type="checkbox" id="setting-autocheck"><span class="toggle-track"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-title">Check Interval</div><div class="setting-desc">How often to refresh (hours)</div></div>
+        <input type="number" id="setting-interval" class="input input-sm" min="1" max="24" value="4">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-title">Push Notifications</div><div class="setting-desc">Get notified on status changes</div></div>
+        <label class="toggle"><input type="checkbox" id="setting-notifications"><span class="toggle-track"></span></label>
+      </div>
+      <button class="btn-ghost w-full mt-2" id="btn-test-notif">Send Test Notification</button>
+      <hr class="divider">
+      <div class="setting-row">
+        <div><div class="setting-title">Share Cases</div><div class="setting-desc">Generate a public read-only link</div></div>
+        <label class="toggle"><input type="checkbox" id="setting-share"><span class="toggle-track"></span></label>
+      </div>
+      <div id="share-link-row" class="hidden" style="padding:8px 0 4px">
+        <div class="input-group">
+          <input type="text" id="share-link-input" class="input flex-1 mono" readonly style="font-size:12px"/>
+          <button class="btn-ghost" id="btn-copy-share">Copy</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="setting-title mb-2">Data</div>
+      <div class="btn-row">
+        <button class="btn-ghost flex-1" id="btn-backup-data">Export</button>
+        <button class="btn-ghost flex-1" onclick="document.getElementById('restore-file-input').click()">Import</button>
+      </div>
+      <input type="file" id="restore-file-input" class="hidden" accept="application/json" />
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVITY LOG -->
+<div class="overlay hidden" id="overlay-logs">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h2>Activity</h2>
+      <button class="btn-icon close-modal" data-close="overlay-logs" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body modal-scroll" id="log-body"></div>
+  </div>
+</div>
+
+<!-- CASE DETAIL -->
+<div class="overlay hidden" id="overlay-detail">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h2 class="mono" id="detail-title">--</h2>
+      <button class="btn-icon close-modal" data-close="overlay-detail" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body modal-scroll">
+      <!-- Progress Stepper -->
+      <div id="detail-progress-stepper"></div>
+
+      <!-- Status Card -->
+      <div class="detail-status-card">
+        <span id="detail-badge" class="badge"></span>
+        <span id="detail-last-changed" class="detail-changed"></span>
+      </div>
+
+      <!-- Service Center -->
+      <div id="detail-service-center"></div>
+
+      <!-- Processing Time Estimate -->
+      <div id="detail-estimate" class="hidden processing-estimate mb-3"></div>
+
+      <!-- Label -->
+      <label>Label</label>
+      <div class="input-group mb-4">
+        <input type="text" id="detail-alias-input" class="input flex-1" placeholder="Add a label..." />
+        <button class="btn-ghost" id="btn-save-alias">Save</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="btn-row mb-4">
+        <button class="btn-ghost flex-1" id="btn-check-neighbors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          Scan Nearby (±10)
+        </button>
+        <button class="btn-danger" id="detail-delete">Delete</button>
+      </div>
+
+      <!-- Chart -->
+      <div id="chart-wrapper" class="hidden chart-section">
+        <canvas id="batchChart"></canvas>
+        <div id="insight-readout" class="hidden insight-readout">
+          <span class="insight-label">Approval Rate</span>
+          <span class="insight-value mono" id="velocity-counter">0%</span>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="section-label">Status History</div>
+      <div class="timeline" id="detail-history-target"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE VIEW -->
+<div class="overlay hidden" id="overlay-timeline">
+  <div class="modal-box modal-xl">
+    <div class="modal-header">
+      <h2>Timeline</h2>
+      <button class="btn-icon close-modal" data-close="overlay-timeline" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body modal-scroll" id="timeline-content"></div>
+  </div>
+</div>
+
+<!-- COMPARE VIEW -->
+<div class="overlay hidden" id="overlay-compare">
+  <div class="modal-box modal-xl">
+    <div class="modal-header">
+      <h2>Compare Cases</h2>
+      <button class="btn-icon close-modal" data-close="overlay-compare" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body modal-scroll" id="compare-content"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay hidden" id="overlay-confirm" style="z-index:9500;">
+  <div class="modal-box modal-sm">
+    <div class="modal-body text-center" style="padding-top:28px;">
+      <div class="confirm-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      </div>
+      <h3>Delete this case?</h3>
+      <p class="text-muted">This action cannot be undone.</p>
+      <div class="btn-row mt-4">
+        <button class="btn-ghost flex-1" id="btn-cancel-del">Cancel</button>
+        <button class="btn-danger flex-1" id="btn-confirm-del">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="overlay hidden" id="overlay-loading" style="z-index:9000;">
+  <div class="loader"><div class="loader-spinner"></div><span>Processing...</span></div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js?v=6"></script>
+</body>
+</html>
