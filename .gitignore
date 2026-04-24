@@ -29,7 +29,7 @@ desktop.ini
 *.swp
 *.swo
 
-# AI
+# Local tools
 .claude/
 
 # Sensitive Screenshots
