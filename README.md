@@ -1,147 +1,153 @@
-# 🇺🇸 USCIS Case Status Tracker
+# USCIS Case Tracker
 
-A self-hosted, automated USCIS case status tracker with a sleek dark-mode dashboard, desktop & push notifications, and intelligent case journey visualization.
+Self-hosted USCIS case-status tracker with a mobile-first dashboard, local JSON storage, scheduled checks, desktop notifications, and web push support.
 
-Track multiple USCIS receipt numbers, get notified instantly when a status changes, and monitor your immigration case progress — all from a beautiful web dashboard accessible from any device.
+I built this because I am an international student tracking my own immigration workflow. USCIS status pages are easy to forget, hard to monitor across multiple receipt numbers, and not designed for quick mobile review. This project turns that into a private dashboard I can run myself.
 
+## Screenshots
 
-## ✨ Features
+![Mobile dashboard](screenshots/mobile-dashboard.png)
 
-- **Automated Status Checking** — Periodically scrapes USCIS.gov using a real Chrome browser to bypass Cloudflare protections
-- **Smart Journey Progress Bar** — Automatically detects form type (I-485, I-765, N-400, etc.) and shows a tailored progress pipeline
-- **Desktop Notifications** — Native OS popups when a case status changes
-- **Web Push Notifications** — Get alerts on your phone via PWA push (works on Android & iOS)
-- **Neighborhood Scanner** — Check the status of nearby receipt numbers to gauge processing speed
-- **Backup & Restore** — Export/import your tracking data as JSON
-- **Password-Protected Dashboard** — Secure access when exposed to the internet
-- **Mobile-First Design** — Fully responsive bento-grid layout, installable as a PWA
-- **Dark Mode** — Sleek, premium dark theme out of the box
+![Mobile case detail](screenshots/mobile-case-detail.png)
 
-## 🚀 Quick Start
+## Features
+
+- Track multiple USCIS receipt numbers from one dashboard
+- Register/login with local password-derived user files
+- Scheduled background checks with respectful delays between requests
+- Case journey visualization for common forms such as I-765, I-485, N-400, and related workflows
+- Desktop notifications for status changes
+- Web push notifications for mobile PWA installs
+- Nearby receipt scanner to estimate processing movement around a case range
+- Backup and restore as JSON
+- Optional read-only share link
+- Local-first storage in `data/` with no external database
+- Responsive dark-mode dashboard installable as a PWA
+
+## Quick Start
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18+
-- [Google Chrome](https://www.google.com/chrome/) installed on the host machine
-
-### Installation
+- Node.js 18+
+- Google Chrome installed on the host machine
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/uscis-tracker.git
-cd uscis-tracker
+git clone https://github.com/MasterSid007/Case-Tracker.git
+cd Case-Tracker
 
-# Install dependencies
 npm install
-
-# Run first-time setup (creates .env and VAPID keys)
 npm run setup
-
-# Edit your password
-# Open .env and change DASHBOARD_PASSWORD
-
-# Start the tracker
 npm start
 ```
 
-The dashboard will be available at **http://localhost:3456**.
+Open `http://localhost:3456`, create a local account password, and add one or more receipt numbers.
 
-### Optional: Install Playwright Browser
-
-If Chrome is not available on your system, you can install a bundled Chromium:
+If Chrome is not available, install Playwright's bundled Chromium:
 
 ```bash
 npm run install-browser
 ```
 
-## 🔧 Configuration
+## Configuration
 
-All configuration is done through the `.env` file:
+Configuration lives in `.env`; runtime case data lives under `data/` and is gitignored.
 
 | Variable | Default | Description |
 |---|---|---|
-| `DASHBOARD_PASSWORD` | `changeme` | Password to access the dashboard |
-| `PORT` | `3456` | Server port |
-| `VAPID_PUBLIC_KEY` | *(auto-generated)* | Web Push public key |
-| `VAPID_PRIVATE_KEY` | *(auto-generated)* | Web Push private key |
+| `PORT` | `3456` | Local dashboard port |
+| `VAPID_EMAIL` | `admin@example.com` | Contact value used for web push VAPID details |
+| `VAPID_PUBLIC_KEY` | auto-generated | Optional explicit web push public key |
+| `VAPID_PRIVATE_KEY` | auto-generated | Optional explicit web push private key |
 
-## 🌐 Remote Access
+The app uses local password-derived user files rather than a central account database. Keep the `data/` directory private because it contains receipt numbers, status history, push subscriptions, and generated VAPID keys.
 
-To access the tracker from your phone or another network, you can use a tunneling service:
+## How It Works
 
-### Using ngrok (recommended)
+The tracker uses a dedicated Chrome profile and Playwright's Chrome DevTools Protocol connection to check USCIS status pages in a real browser session.
 
-```bash
-# Install ngrok: https://ngrok.com/download
-ngrok http 3456 --url your-domain.ngrok-free.dev
+Flow:
+
+1. The Express server stores cases and settings in local JSON files.
+2. A scheduled job or manual refresh calls the USCIS scraper.
+3. The scraper launches or reuses Chrome with a dedicated profile in `data/chrome-profile/`.
+4. Playwright connects over CDP, opens the USCIS case-status page, enters the receipt number, and extracts the result.
+5. If Cloudflare Turnstile or an interstitial appears, the scraper waits for the normal browser session to resolve it. If it does not resolve, the user is asked to open Chrome and complete the challenge manually once; the dedicated profile can then reuse that session state.
+6. When a status changes, the app records history and sends desktop/web-push notifications if enabled.
+
+This project does not solve CAPTCHAs or attempt to evade platform controls. It uses a real browser profile, persistent cookies, and conservative delays so the workflow behaves like a personal-use status checker.
+
+## Architecture
+
+```text
+server.js
+  -> Express API, auth, scheduler, web push
+lib/scraper.js
+  -> Playwright + Chrome CDP USCIS status checks
+lib/storage.js
+  -> local JSON persistence and password-derived user files
+lib/notifier.js
+  -> desktop notifications
+public/
+  -> dashboard SPA, service worker, PWA manifest
+scripts/setup.js
+  -> first-time data directory, VAPID key, and .env setup
 ```
 
-### Using Cloudflare Tunnel
+## API Reference
+
+All `/api/*` routes require the `Authorization` header set to the local account password.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/cases` | List tracked cases |
+| `POST` | `/api/cases` | Add a case |
+| `PUT` | `/api/cases/:id` | Update a case label |
+| `DELETE` | `/api/cases/:id` | Remove a case |
+| `POST` | `/api/check/:id` | Check one case |
+| `POST` | `/api/check-all` | Check all cases |
+| `POST` | `/api/check-neighbors/:receipt` | Scan nearby receipt numbers |
+| `GET` | `/api/settings` | Read settings |
+| `PUT` | `/api/settings` | Update settings |
+| `GET` | `/api/logs` | Read activity logs |
+| `GET` | `/api/status` | Read scheduler status |
+| `POST` | `/api/restore` | Restore a JSON backup |
+
+## Remote Access
+
+For phone access, run the tracker locally and expose it through a tunnel you control:
+
+```bash
+ngrok http 3456
+```
+
+or:
 
 ```bash
 cloudflared tunnel --url http://localhost:3456
 ```
 
-## 📱 Mobile PWA Setup
+Use a strong local account password before exposing the dashboard beyond localhost.
 
-1. Open the dashboard URL on your phone's browser
-2. Tap **"Add to Home Screen"** (Safari) or **"Install App"** (Chrome)
-3. Open the installed app and go to **Settings → Enable Native Push**
-4. You'll now receive push notifications on status changes
+## Mobile PWA
 
-## 🏗️ Architecture
+1. Open the dashboard URL on your phone.
+2. Use Add to Home Screen or Install App.
+3. Open Settings and enable native push notifications.
+4. Leave the server running on the host machine for scheduled checks.
 
-```
-uscis-tracker/
-├── server.js            # Express API server + scheduler
-├── lib/
-│   ├── scraper.js       # Playwright-based USCIS scraper
-│   ├── storage.js       # JSON file-based persistence
-│   └── notifier.js      # Desktop notification handler
-├── public/
-│   ├── index.html       # Dashboard SPA
-│   ├── css/style.css    # Dark-mode bento-grid styles
-│   ├── js/app.js        # Frontend logic + journey pipeline
-│   ├── sw.js            # Service worker for push
-│   └── manifest.json    # PWA manifest
-├── data/                # Runtime data (gitignored)
-│   ├── cases.json       # Tracked cases & history
-│   └── vapid.json       # VAPID keys for push
-├── scripts/
-│   └── setup.js         # First-time setup script
-├── .env.example         # Example environment config
-└── package.json
-```
+## Verification
 
-## 🔒 How It Works
+Verified locally:
 
-1. **Scraper** launches a real Chrome browser via Playwright's CDP (Chrome DevTools Protocol) to navigate USCIS.gov
-2. Chrome's existing session cookies help bypass Cloudflare's Turnstile challenge automatically
-3. The scraper extracts the case status from the results page using multiple fallback strategies
-4. If a status change is detected, desktop + push notifications fire immediately
-5. All data is stored locally in a JSON file — no external database required
+- `npm start` launches the dashboard on port 3456
+- Register/login works with a local password-derived user file
+- Restore/import path loads demo cases without hitting USCIS
+- Mobile dashboard and case-detail screenshots render correctly
 
-## 📋 API Reference
+## Responsible Use
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/cases` | List all tracked cases |
-| `POST` | `/api/cases` | Add a new case |
-| `DELETE` | `/api/cases/:id` | Remove a case |
-| `POST` | `/api/check/:id` | Check a single case |
-| `POST` | `/api/check-all` | Check all cases |
-| `POST` | `/api/check-neighbors/:receipt` | Batch-scan nearby receipts |
-| `GET` | `/api/settings` | Get settings |
-| `PUT` | `/api/settings` | Update settings |
-| `GET` | `/api/logs` | Get activity logs |
-| `GET` | `/api/status` | Get server status |
+This is a personal-use tracker for USCIS case-status monitoring. Use reasonable intervals, avoid bulk abuse, and do not publish receipt numbers or case history. If USCIS changes its site or presents a challenge that does not resolve in the dedicated browser profile, complete it manually in Chrome and retry.
 
-All API endpoints require the `Authorization` header set to your dashboard password.
+## License
 
-## ⚠️ Disclaimer
-
-This tool scrapes USCIS.gov for personal use. It includes respectful delays between checks to avoid overloading their servers. Please use responsibly and do not abuse the service.
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE).

@@ -15,6 +15,8 @@ cloudflared
 
 # Tunnel logs/configs
 pinggy_*.txt
+*.log
+*.pid
 config.yml
 start.bat
 
